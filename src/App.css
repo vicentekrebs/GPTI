@@ -151,16 +151,23 @@ h1 {
   font-size: 2.2rem;
 }
 
-.metric-card.warning::after {
-  background: rgba(245, 158, 11, 0.2);
+.metric-card.sources::after {
+  background: rgba(20, 184, 166, 0.18);
 }
 
-.metric-card.danger::after {
-  background: rgba(239, 68, 68, 0.18);
+.metric-card.variables::after {
+  background: rgba(99, 102, 241, 0.16);
 }
 
-.metric-card.temperature::after {
+.metric-card.updated::after {
   background: rgba(14, 165, 233, 0.18);
+}
+
+.metric-card.updated strong {
+  display: block;
+  max-width: 14ch;
+  font-size: 1.38rem;
+  line-height: 1.2;
 }
 
 .filters-panel {
@@ -239,9 +246,16 @@ select:focus {
   font-size: 1.2rem;
 }
 
-.station-header span:not(.status) {
+.station-header span:not(.status),
+.station-header small {
+  display: block;
   color: #6b8297;
   font-weight: 700;
+}
+
+.station-header small {
+  margin-top: 6px;
+  color: #0477a8;
 }
 
 .status {
@@ -264,24 +278,24 @@ select:focus {
   background: currentColor;
 }
 
-.status.normal {
+.status.actualizado {
   color: #047857;
   background: #dff8ef;
 }
 
-.status.alerta {
+.status.desactualizado {
   color: #b45309;
   background: #fff1cc;
 }
 
-.status.crítico {
-  color: #b91c1c;
-  background: #ffe2e2;
+.status.sin-datos {
+  color: #64748b;
+  background: #eef2f7;
 }
 
 .station-values {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
 }
 
@@ -302,6 +316,13 @@ select:focus {
 .station-values strong {
   color: #0e3a61;
   font-size: 1.1rem;
+}
+
+.last-update {
+  margin: 18px 0 0;
+  color: #5f7790;
+  font-size: 0.92rem;
+  font-weight: 700;
 }
 
 .comparison-panel {
