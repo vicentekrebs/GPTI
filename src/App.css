@@ -42,6 +42,7 @@ select {
 .hero-card,
 .metric-card,
 .filters-panel,
+.chart-panel,
 .station-card,
 .comparison-panel {
   border: 1px solid rgba(111, 174, 215, 0.28);
@@ -66,6 +67,13 @@ select {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+
+.eyebrow.compact {
+  margin-bottom: 10px;
+  padding: 7px 12px;
+  font-size: 0.72rem;
 }
 
 h1,
@@ -213,6 +221,84 @@ select {
 select:focus {
   border-color: #18a8d8;
   box-shadow: 0 0 0 4px rgba(24, 168, 216, 0.14);
+}
+
+
+.chart-panel {
+  margin-bottom: 26px;
+  padding: 30px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: start;
+  margin-bottom: 24px;
+}
+
+.chart-header .section-title {
+  max-width: 620px;
+  margin-bottom: 0;
+}
+
+.chart-controls {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.chart-controls label {
+  display: grid;
+  gap: 8px;
+  color: #516a83;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.chart-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.chart-summary div {
+  border: 1px solid #d9edf8;
+  border-radius: 20px;
+  padding: 18px;
+  background: linear-gradient(180deg, #f8fcff, #eef8ff);
+}
+
+.chart-summary span,
+.chart-summary small {
+  display: block;
+  color: #647f97;
+  font-weight: 750;
+}
+
+.chart-summary span {
+  margin-bottom: 8px;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.chart-summary strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #123b62;
+  font-size: 1.18rem;
+  line-height: 1.25;
+}
+
+.chart-wrapper {
+  min-height: 380px;
+  border: 1px solid #d9edf8;
+  border-radius: 24px;
+  padding: 18px 16px 8px;
+  background: #fbfdff;
 }
 
 .stations-grid {
@@ -370,13 +456,19 @@ tbody tr:hover {
 @media (max-width: 900px) {
   .hero,
   .metrics-grid,
+  .chart-summary,
   .stations-grid {
     grid-template-columns: 1fr;
   }
 
-  .filters-panel {
+  .filters-panel,
+  .chart-header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .chart-controls {
+    justify-content: stretch;
   }
 
   .filters {
@@ -384,6 +476,7 @@ tbody tr:hover {
   }
 
   .filters label,
+  .chart-controls label,
   select {
     width: 100%;
   }
@@ -399,14 +492,20 @@ tbody tr:hover {
   .hero-card,
   .metric-card,
   .filters-panel,
+  .chart-panel,
   .station-card,
   .comparison-panel {
     border-radius: 22px;
     padding: 22px;
   }
 
+  .chart-wrapper {
+    padding: 12px 8px 4px;
+  }
+
   .station-header,
-  .station-values {
+  .station-values,
+  .chart-summary {
     grid-template-columns: 1fr;
   }
 
