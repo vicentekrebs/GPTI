@@ -82,3 +82,25 @@ tbody tr:hover { background: #f7fcff; }
 .comparison-insight p + p { margin-top: 8px; }
 
 @media (max-width: 620px) { .day-selector button { flex: 1 1 42%; } .day-selector.compact button { flex: 1 1 22%; } .comparison-chart { min-height: 440px; } }
+
+.sources-status-panel { display: grid; gap: 18px; border: 1px solid rgba(111, 174, 215, 0.28); border-radius: 28px; padding: 28px; background: rgba(255, 255, 255, 0.84); box-shadow: 0 22px 55px rgba(34, 84, 128, 0.12); backdrop-filter: blur(14px); }
+.sources-status-panel h2 { margin-bottom: 8px; font-size: 1.55rem; }
+.sources-status-panel p { margin-bottom: 0; color: #58718b; font-size: 1.04rem; line-height: 1.65; }
+.sources-status-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.source-status { display: grid; gap: 6px; border: 1px solid #d9edf8; border-radius: 18px; padding: 16px; background: #f8fcff; }
+.source-status span { color: #153a5b; font-weight: 900; }
+.source-status strong { width: fit-content; border-radius: 999px; padding: 5px 10px; font-size: .78rem; }
+.source-status.available strong { color: #047857; background: #dff8ef; }
+.source-status.unavailable strong { color: #b91c1c; background: #fee2e2; }
+.source-status small { color: #6b8297; line-height: 1.45; }
+.station-variables { border-radius: 18px; padding: 16px; background: #f1f8fd; }
+.station-variables h4 { margin: 0 0 10px; color: #123b62; font-size: .95rem; }
+.station-variables ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.station-variables li { display: flex; align-items: center; gap: 8px; color: #31556f; font-weight: 850; }
+.station-variables li span { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 999px; font-size: .8rem; font-weight: 950; }
+.station-variables li.available span { color: #047857; background: #dff8ef; }
+.station-variables li.unavailable { color: #8aa0b3; }
+.station-variables li.unavailable span { color: #b91c1c; background: #fee2e2; }
+.update-date, .update-relative { display: block; }
+.update-date { color: #0e3a61; font-weight: 900; }
+.update-relative { margin-top: 4px; color: #6b8297; font-size: .88rem; }
