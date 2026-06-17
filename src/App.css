@@ -65,3 +65,12 @@ tbody tr:hover { background: #f7fcff; }
 
 @media (max-width: 900px) { .hero, .metrics-grid, .stations-grid { grid-template-columns: 1fr; } .filters-panel, .chart-header, .navbar { align-items: stretch; flex-direction: column; } .filters, .chart-controls { justify-content: stretch; } .filters label, .chart-controls label, select { width: 100%; } }
 @media (max-width: 620px) { .dashboard { width: min(100% - 24px, 1180px); padding: 24px 0; } .hero > div:first-child, .hero-card, .metric-card, .filters-panel, .station-card, .comparison-panel, .value-panel, .page-heading { border-radius: 22px; padding: 22px; } .station-header { flex-direction: column; } .chart-wrapper { padding: 12px 8px 4px; } }
+
+.day-selector { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 18px; padding: 0 0 4px; }
+.day-selector button { border: 1px solid #c9e3f3; border-radius: 999px; padding: 10px 15px; color: #52708b; background: #f8fcff; font-weight: 900; cursor: pointer; transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, color 160ms ease; }
+.day-selector button:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(34,84,128,.12); }
+.day-selector button.active { border-color: #18a8d8; color: #035d87; background: #dcf4ff; box-shadow: 0 12px 24px rgba(24,168,216,.18); }
+.business-note { margin-bottom: 18px; border: 1px solid #c9e3f3; border-radius: 22px; padding: 18px 20px; color: #31556f; background: linear-gradient(135deg, #f8fcff, #edf8ff); font-weight: 750; line-height: 1.6; }
+.temporal-chart { margin-bottom: 24px; }
+
+@media (max-width: 620px) { .day-selector button { flex: 1 1 42%; } }
