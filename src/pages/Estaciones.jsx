@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { estaciones } from '../data/hydroData.js';
+import { estaciones, fuentesIntegradas, variablesDisponibles } from '../data/hydroData.js';
 
 function Estaciones() {
   const [zona, setZona] = useState('Todas');
@@ -34,6 +34,24 @@ function Estaciones() {
         </div>
       </section>
 
+      <section className="sources-status-panel" aria-label="Estado de fuentes integradas">
+        <div>
+          <h2>Estado de fuentes integradas</h2>
+          <p>Disponibilidad simulada de las fuentes utilizadas por la plataforma.</p>
+        </div>
+        <div className="sources-status-list">
+          {fuentesIntegradas.map((fuente) => (
+            <div className={`source-status ${fuente.disponible ? 'available' : 'unavailable'}`} key={fuente.nombre}>
+              <span>{fuente.disponible ? '🟢' : '🔴'} {fuente.nombre}</span>
+              <strong>{fuente.disponible ? 'Disponible' : 'No disponible'}</strong>
+              {!fuente.disponible && (
+                <small>Actualmente esta fuente no se encuentra disponible. La plataforma continúa operando con las demás fuentes.</small>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className="stations-grid" aria-label="Listado de estaciones disponibles">
         {estacionesFiltradas.length > 0 ? (
           estacionesFiltradas.map((estacion) => (
@@ -44,6 +62,20 @@ function Estaciones() {
                   <span>{estacion.zona}</span>
                   <small>{estacion.region}</small>
                 </div>
+              </div>
+              <div className="station-variables" aria-label={`Variables disponibles en ${estacion.nombre}`}>
+                <h4>Variables disponibles</h4>
+                <ul>
+                  {variablesDisponibles.map((variable) => {
+                    const disponible = estacion.variablesMonitoreadas.includes(variable);
+                    return (
+                      <li className={disponible ? 'available' : 'unavailable'} key={variable}>
+                        <span aria-hidden="true">{disponible ? '✓' : '✗'}</span>
+                        {variable}
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
               <p className="last-update">Fuente: {estacion.fuente}</p>
             </article>

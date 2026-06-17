@@ -87,6 +87,7 @@ function Comparacion() {
       minimo: Math.min(...valores),
       maximo: Math.max(...valores),
       ultimaActualizacion: estacion.ultimaActualizacion,
+      ultimaActualizacionExacta: estacion.ultimaActualizacionExacta,
     };
   }), [datosHorarios, estacionesZona]);
 
@@ -140,7 +141,7 @@ function Comparacion() {
         <div className="table-wrapper comparison-table">
           <table>
             <thead><tr><th>Fuente</th><th>Estación</th><th>Promedio diario</th><th>Mínimo diario</th><th>Máximo diario</th><th>Última actualización</th></tr></thead>
-            <tbody>{resumenEstaciones.map((fila) => <tr key={`${fila.fuente}-${fila.estacion}`}><td>{fila.fuente}</td><td>{fila.estacion}</td><td>{formatearNumero(fila.promedio)} {configuracion.unidad}</td><td>{formatearNumero(fila.minimo)} {configuracion.unidad}</td><td>{formatearNumero(fila.maximo)} {configuracion.unidad}</td><td>{fila.ultimaActualizacion}</td></tr>)}</tbody>
+            <tbody>{resumenEstaciones.map((fila) => <tr key={`${fila.fuente}-${fila.estacion}`}><td>{fila.fuente}</td><td>{fila.estacion}</td><td>{formatearNumero(fila.promedio)} {configuracion.unidad}</td><td>{formatearNumero(fila.minimo)} {configuracion.unidad}</td><td>{formatearNumero(fila.maximo)} {configuracion.unidad}</td><td><span className="update-date">{fila.ultimaActualizacionExacta}</span><span className="update-relative">{fila.ultimaActualizacion}</span></td></tr>)}</tbody>
           </table>
         </div>
 
