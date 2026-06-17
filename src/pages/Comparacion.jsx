@@ -3,13 +3,22 @@ import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, X
 import { configuracionVariables, estaciones, variablesDisponibles, zonasComparacion } from '../data/hydroData.js';
 
 const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-const horasDia = ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00'];
+const diasSemanaCortos = {
+  Lunes: 'Lun',
+  Martes: 'Mar',
+  Miércoles: 'Mié',
+  Jueves: 'Jue',
+  Viernes: 'Vie',
+  Sábado: 'Sáb',
+  Domingo: 'Dom',
+};
+const horasDia = Array.from({ length: 24 }, (_, indice) => `${String(indice).padStart(2, '0')}:00`);
 const coloresEstaciones = ['#0ea5e9', '#f97316', '#14b8a6', '#8b5cf6', '#ef4444'];
 
 const variacionesPorVariable = {
-  temperatura: [-2.4, -2.7, -2.9, -3, -2.8, -2.5, -1.8, -1, -0.2, 0.6, 1.4, 2.1],
-  precipitacion: [0.7, 0.6, 0.5, 0.5, 0.6, 0.8, 1, 1.1, 0.9, 0.7, 0.5, 0.4],
-  caudal: [-1.1, -1.3, -1.4, -1.5, -1.3, -1, -0.6, -0.2, 0.3, 0.8, 1.2, 1.5],
+  temperatura: [-2.6, -2.9, -3.1, -3.2, -3.1, -2.8, -2.2, -1.4, -0.4, 0.7, 1.8, 2.7, 3.4, 3.8, 3.6, 3.1, 2.2, 1.1, 0.2, -0.5, -1.1, -1.6, -2, -2.3],
+  precipitacion: [0.8, 0.7, 0.6, 0.5, 0.6, 0.8, 1, 1.2, 1.1, 0.9, 0.7, 0.5, 0.4, 0.4, 0.5, 0.6, 0.8, 1.1, 1.3, 1.2, 1.1, 1, 0.9, 0.8],
+  caudal: [-1.2, -1.4, -1.5, -1.6, -1.5, -1.2, -0.8, -0.3, 0.2, 0.7, 1.2, 1.6, 1.9, 2.1, 2, 1.7, 1.3, 0.8, 0.4, 0, -0.3, -0.6, -0.8, -1],
 };
 
 const ajustePorDia = {
@@ -31,42 +40,6 @@ function construirNombreEstacion(estacion) {
   return estacion.nombre;
 }
 
-
-function calcularMediana(valores) {
-  if (!valores.length) return 0;
-  const ordenados = [...valores].sort((a, b) => a - b);
-  const mitad = Math.floor(ordenados.length / 2);
-
-  return ordenados.length % 2 === 0 ? (ordenados[mitad - 1] + ordenados[mitad]) / 2 : ordenados[mitad];
-}
-
-function calcularResumenEstadistico(valores) {
-  if (!valores.length) {
-    return {
-      promedio: 0,
-      mediana: 0,
-      desviacion: 0,
-      minimo: 0,
-      maximo: 0,
-      rango: 0,
-      coeficienteVariacion: 0,
-      acuerdo: 100,
-    };
-  }
-
-  const promedio = valores.reduce((total, valor) => total + valor, 0) / valores.length;
-  const mediana = calcularMediana(valores);
-  const minimo = Math.min(...valores);
-  const maximo = Math.max(...valores);
-  const rango = maximo - minimo;
-  const varianza = valores.reduce((total, valor) => total + ((valor - promedio) ** 2), 0) / valores.length;
-  const desviacion = Math.sqrt(varianza);
-  const coeficienteVariacion = promedio === 0 ? 0 : (desviacion / Math.abs(promedio)) * 100;
-  const acuerdo = Math.max(0, 100 - coeficienteVariacion);
-
-  return { promedio, mediana, desviacion, minimo, maximo, rango, coeficienteVariacion, acuerdo };
-}
-
 function formatearNumero(valor) {
   return Number(valor).toFixed(1);
 }
@@ -86,7 +59,6 @@ function Comparacion() {
   const [zona, setZona] = useState(zonasComparacion[0]);
   const [variable, setVariable] = useState('Temperatura');
   const [dia, setDia] = useState('Miércoles');
-  const [horaSeleccionada, setHoraSeleccionada] = useState('08:00');
   const configuracion = configuracionVariables[variable];
 
   const estacionesZona = useMemo(() => estaciones
@@ -111,129 +83,69 @@ function Comparacion() {
     return {
       fuente: estacion.fuente,
       estacion: estacion.nombreComparacion,
-      promedio: formatearNumero(promedio),
-      minimo: formatearNumero(Math.min(...valores)),
-      maximo: formatearNumero(Math.max(...valores)),
+      promedio,
+      minimo: Math.min(...valores),
+      maximo: Math.max(...valores),
       ultimaActualizacion: estacion.ultimaActualizacion,
     };
   }), [datosHorarios, estacionesZona]);
 
-  const resumenHoraSeleccionada = useMemo(() => {
-    const registro = datosHorarios.find((item) => item.hora === horaSeleccionada) ?? datosHorarios[0];
-    const valores = estacionesZona.map((estacion) => registro[estacion.nombreComparacion]);
+  const insight = useMemo(() => {
+    if (!resumenEstaciones.length) return [];
 
-    return calcularResumenEstadistico(valores);
-  }, [datosHorarios, estacionesZona, horaSeleccionada]);
-
-  const resumenDiario = useMemo(() => {
-    const promediosPorFuente = estacionesZona.map((estacion) => {
-      const valores = datosHorarios.map((registro) => registro[estacion.nombreComparacion]);
-      return valores.reduce((total, valor) => total + valor, 0) / valores.length;
+    const mayorPromedio = resumenEstaciones.reduce((mayor, estacion) => (estacion.promedio > mayor.promedio ? estacion : mayor), resumenEstaciones[0]);
+    const diferenciasHorarias = datosHorarios.map((registro) => {
+      const valores = estacionesZona.map((estacion) => registro[estacion.nombreComparacion]);
+      return Math.max(...valores) - Math.min(...valores);
     });
-    const minimosPorFuente = estacionesZona.map((estacion) => Math.min(...datosHorarios.map((registro) => registro[estacion.nombreComparacion])));
-    const maximosPorFuente = estacionesZona.map((estacion) => Math.max(...datosHorarios.map((registro) => registro[estacion.nombreComparacion])));
-    const todosLosValores = datosHorarios.flatMap((registro) => estacionesZona.map((estacion) => registro[estacion.nombreComparacion]));
+    const mayorDiferencia = Math.max(...diferenciasHorarias);
 
-    return {
-      promedios: calcularResumenEstadistico(promediosPorFuente),
-      minimos: calcularResumenEstadistico(minimosPorFuente),
-      maximos: calcularResumenEstadistico(maximosPorFuente),
-      general: calcularResumenEstadistico(todosLosValores),
-    };
-  }, [datosHorarios, estacionesZona]);
-
-  const manejarClickGrafico = (evento) => {
-    if (evento?.activeLabel) setHoraSeleccionada(evento.activeLabel);
-  };
+    return [
+      `Para el día seleccionado, ${mayorPromedio.estacion} registró el promedio diario más alto.`,
+      `La mayor diferencia observada entre estaciones fue de ${formatearNumero(mayorDiferencia)} ${configuracion.unidad}.`,
+    ];
+  }, [configuracion.unidad, datosHorarios, estacionesZona, resumenEstaciones]);
 
   return (
-    <div className="page-stack">
-      <section className="page-heading wide">
-        <span className="eyebrow compact">Comparación integrada</span>
-        <h1>Comparación temporal de estaciones</h1>
-        <p>
-          Una de las principales ventajas de HidrometeorologíaChile es centralizar información proveniente de distintas instituciones,
-          permitiendo comparar rápidamente datos para una misma zona sin necesidad de consultar múltiples plataformas por separado.
-        </p>
-      </section>
-
+    <div className="page-stack comparison-page">
       <section className="comparison-panel">
-        <div className="chart-header">
-          <div className="section-title">
-            <h2>{zona}</h2>
-            <p>Selecciona zona, variable y día para comparar, entre 00:00 y 11:00, la evolución horaria de todas las estaciones disponibles.</p>
+        <div className="comparison-controls" aria-label="Controles de comparación">
+          <label>Zona<select value={zona} onChange={(event) => setZona(event.target.value)}>{zonasComparacion.map((item) => <option key={item}>{item}</option>)}</select></label>
+          <label>Variable<select value={variable} onChange={(event) => setVariable(event.target.value)}>{variablesDisponibles.map((item) => <option key={item}>{item}</option>)}</select></label>
+          <div className="control-group">
+            <span>Día</span>
+            <div className="day-selector compact" aria-label="Seleccionar día de comparación">
+              {diasSemana.map((item) => (
+                <button key={item} type="button" className={item === dia ? 'active' : ''} onClick={() => setDia(item)}>{diasSemanaCortos[item]}</button>
+              ))}
+            </div>
           </div>
-          <div className="chart-controls">
-            <label>Zona<select value={zona} onChange={(event) => setZona(event.target.value)}>{zonasComparacion.map((item) => <option key={item}>{item}</option>)}</select></label>
-            <label>Variable<select value={variable} onChange={(event) => setVariable(event.target.value)}>{variablesDisponibles.map((item) => <option key={item}>{item}</option>)}</select></label>
-          </div>
         </div>
 
-        <div className="day-selector" aria-label="Seleccionar día de comparación">
-          {diasSemana.map((item) => (
-            <button key={item} type="button" className={item === dia ? 'active' : ''} onClick={() => setDia(item)}>{item}</button>
-          ))}
-        </div>
-
-        <div className="business-note">
-          Esta vista permite comparar los registros reportados por distintas estaciones para una misma zona geográfica durante un día específico,
-          facilitando el análisis de diferencias, acuerdos y dispersión entre fuentes para una misma variable hidrometeorológica.
-        </div>
-
-        <div className="chart-wrapper comparison-chart temporal-chart">
-          <ResponsiveContainer width="100%" height={390}>
-            <LineChart data={datosHorarios} margin={{ top: 20, right: 28, bottom: 20, left: 4 }} onClick={manejarClickGrafico}>
+        <div className="chart-wrapper comparison-chart">
+          <ResponsiveContainer width="100%" height={520}>
+            <LineChart data={datosHorarios} margin={{ top: 18, right: 28, bottom: 18, left: 4 }}>
               <CartesianGrid strokeDasharray="4 4" stroke="#d9ecf7" />
-              <XAxis dataKey="hora" tick={{ fill: '#55708a', fontSize: 12 }} axisLine={false} tickLine={false} interval={0} />
+              <XAxis dataKey="hora" tick={{ fill: '#55708a', fontSize: 12 }} axisLine={false} tickLine={false} interval={1} />
               <YAxis tick={{ fill: '#55708a', fontSize: 12 }} axisLine={false} tickLine={false} label={{ value: `${variable} (${configuracion.unidad})`, angle: -90, position: 'insideLeft', fill: '#55708a', fontSize: 12 }} />
               <Tooltip formatter={(valor, nombre) => [`${valor} ${configuracion.unidad}`, nombre]} labelFormatter={(hora) => `${dia} · ${hora}`} contentStyle={{ border: '1px solid #c9e3f3', borderRadius: '16px', boxShadow: '0 16px 36px rgba(34, 84, 128, 0.16)' }} />
               <Legend verticalAlign="top" height={48} />
               {estacionesZona.map((estacion) => (
-                <Line key={estacion.id} type="monotone" dataKey={estacion.nombreComparacion} name={estacion.nombreComparacion} stroke={estacion.color} strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 7 }} />
+                <Line key={estacion.id} type="monotone" dataKey={estacion.nombreComparacion} name={estacion.nombreComparacion} stroke={estacion.color} strokeWidth={3} dot={false} activeDot={{ r: 7 }} />
               ))}
             </LineChart>
           </ResponsiveContainer>
         </div>
 
-
-        <div className="hour-selector" aria-label="Seleccionar hora para resumen estadístico">
-          {horasDia.map((hora) => (
-            <button key={hora} type="button" className={hora === horaSeleccionada ? 'active' : ''} onClick={() => setHoraSeleccionada(hora)}>{hora}</button>
-          ))}
-        </div>
-
-        <div className="stats-grid" aria-label="Resumen estadístico de fuentes">
-          <article className="stats-card highlighted">
-            <span>Resumen por hora · {horaSeleccionada}</span>
-            <strong>{formatearNumero(resumenHoraSeleccionada.promedio)} {configuracion.unidad}</strong>
-            <p>Mediana {formatearNumero(resumenHoraSeleccionada.mediana)} · σ {formatearNumero(resumenHoraSeleccionada.desviacion)} · acuerdo {formatearNumero(resumenHoraSeleccionada.acuerdo)}%</p>
-          </article>
-          <article className="stats-card">
-            <span>Máxima diaria entre fuentes</span>
-            <strong>{formatearNumero(resumenDiario.maximos.promedio)} {configuracion.unidad}</strong>
-            <p>Mediana {formatearNumero(resumenDiario.maximos.mediana)} · σ {formatearNumero(resumenDiario.maximos.desviacion)} · rango {formatearNumero(resumenDiario.maximos.rango)}</p>
-          </article>
-          <article className="stats-card">
-            <span>Mínima diaria entre fuentes</span>
-            <strong>{formatearNumero(resumenDiario.minimos.promedio)} {configuracion.unidad}</strong>
-            <p>Mediana {formatearNumero(resumenDiario.minimos.mediana)} · σ {formatearNumero(resumenDiario.minimos.desviacion)} · rango {formatearNumero(resumenDiario.minimos.rango)}</p>
-          </article>
-          <article className="stats-card">
-            <span>Dispersión general del día</span>
-            <strong>σ {formatearNumero(resumenDiario.general.desviacion)}</strong>
-            <p>Promedio {formatearNumero(resumenDiario.general.promedio)} · CV {formatearNumero(resumenDiario.general.coeficienteVariacion)}% · acuerdo {formatearNumero(resumenDiario.general.acuerdo)}%</p>
-          </article>
-        </div>
-
-        <div className="agreement-note">
-          El indicador de acuerdo se calcula como 100 menos el coeficiente de variación: valores altos indican que las fuentes están reportando cifras más parecidas.
-        </div>
-
         <div className="table-wrapper comparison-table">
           <table>
-            <thead><tr><th>Fuente</th><th>Estación</th><th>Día</th><th>Promedio</th><th>Mínimo</th><th>Máximo</th><th>Última actualización</th></tr></thead>
-            <tbody>{resumenEstaciones.map((fila) => <tr key={`${fila.fuente}-${fila.estacion}`}><td>{fila.fuente}</td><td>{fila.estacion}</td><td>{dia}</td><td>{fila.promedio} {configuracion.unidad}</td><td>{fila.minimo} {configuracion.unidad}</td><td>{fila.maximo} {configuracion.unidad}</td><td>{fila.ultimaActualizacion}</td></tr>)}</tbody>
+            <thead><tr><th>Fuente</th><th>Estación</th><th>Promedio diario</th><th>Mínimo diario</th><th>Máximo diario</th><th>Última actualización</th></tr></thead>
+            <tbody>{resumenEstaciones.map((fila) => <tr key={`${fila.fuente}-${fila.estacion}`}><td>{fila.fuente}</td><td>{fila.estacion}</td><td>{formatearNumero(fila.promedio)} {configuracion.unidad}</td><td>{formatearNumero(fila.minimo)} {configuracion.unidad}</td><td>{formatearNumero(fila.maximo)} {configuracion.unidad}</td><td>{fila.ultimaActualizacion}</td></tr>)}</tbody>
           </table>
+        </div>
+
+        <div className="comparison-insight" aria-label="Insight automático">
+          {insight.map((texto) => <p key={texto}>{texto}</p>)}
         </div>
       </section>
     </div>
