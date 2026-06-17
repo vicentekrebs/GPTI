@@ -74,3 +74,18 @@ tbody tr:hover { background: #f7fcff; }
 .temporal-chart { margin-bottom: 24px; }
 
 @media (max-width: 620px) { .day-selector button { flex: 1 1 42%; } }
+
+.hour-selector { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 18px; }
+.hour-selector button { border: 1px solid #c9e3f3; border-radius: 999px; padding: 9px 12px; color: #52708b; background: #f8fcff; font-size: .9rem; font-weight: 900; cursor: pointer; transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, color 160ms ease; }
+.hour-selector button:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(34,84,128,.12); }
+.hour-selector button.active { border-color: #14b8a6; color: #0f766e; background: #dcfdfa; box-shadow: 0 12px 24px rgba(20,184,166,.18); }
+.stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
+.stats-card { border: 1px solid #d9edf8; border-radius: 22px; padding: 18px; background: #fbfdff; box-shadow: 0 14px 30px rgba(34,84,128,.08); }
+.stats-card.highlighted { border-color: #99f6e4; background: linear-gradient(135deg, #f0fdfa, #f8fcff); }
+.stats-card span { display: block; margin-bottom: 10px; color: #607990; font-size: .82rem; font-weight: 900; text-transform: uppercase; letter-spacing: .03em; }
+.stats-card strong { display: block; margin-bottom: 8px; color: #0e3a61; font-size: 1.65rem; line-height: 1.1; }
+.stats-card p { margin: 0; color: #52708b; font-size: .92rem; font-weight: 750; line-height: 1.5; }
+.agreement-note { margin-bottom: 18px; border: 1px solid #bae6fd; border-radius: 18px; padding: 14px 16px; color: #31556f; background: #f0f9ff; font-weight: 750; line-height: 1.55; }
+
+@media (max-width: 1050px) { .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .hour-selector button { flex: 1 1 28%; } .stats-grid { grid-template-columns: 1fr; } }
