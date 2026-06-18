@@ -2,7 +2,6 @@ import { Navigate, Route, Routes } from './lib/reactRouterDom.js';
 import Navbar from './components/Navbar.jsx';
 import Comparacion from './pages/Comparacion.jsx';
 import Estaciones from './pages/Estaciones.jsx';
-import Inicio from './pages/Inicio.jsx';
 
 function App() {
   return (
@@ -10,9 +9,10 @@ function App() {
       <Navbar />
       <main className="dashboard">
         <Routes>
-          <Route path="/" element={<Inicio />} />
-          <Route path="/estaciones" element={<Estaciones />} />
-          <Route path="/comparacion" element={<Comparacion />} />
+          <Route path="/" element={<Comparacion />} />
+          <Route path="/fuentes" element={<Estaciones />} />
+          <Route path="/estaciones" element={<Navigate to="/fuentes" replace />} />
+          <Route path="/comparacion" element={<Navigate to="/" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
