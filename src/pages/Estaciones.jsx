@@ -1,6 +1,37 @@
 import { useMemo, useState } from 'react';
 import { estaciones } from '../data/hydroData.js';
 
+const regionesChile = [
+  'Región de Arica y Parinacota',
+  'Región de Tarapacá',
+  'Región de Antofagasta',
+  'Región de Atacama',
+  'Región de Coquimbo',
+  'Región de Valparaíso',
+  'Región Metropolitana de Santiago',
+  "Región del Libertador General Bernardo O'Higgins (O'Higgins)",
+  'Región del Maule',
+  'Región de Ñuble',
+  'Región del Biobío',
+  'Región de La Araucanía',
+  'Región de Los Ríos',
+  'Región de Los Lagos',
+  'Región de Aysén del General Carlos Ibáñez del Campo',
+  'Región de Magallanes y de la Antártica Chilena',
+];
+
+const nombresRegiones = {
+  Antofagasta: 'Región de Antofagasta',
+  Atacama: 'Región de Atacama',
+  Coquimbo: 'Región de Coquimbo',
+  Valparaíso: 'Región de Valparaíso',
+  Metropolitana: 'Región Metropolitana de Santiago',
+  Biobío: 'Región del Biobío',
+  'La Araucanía': 'Región de La Araucanía',
+  'Los Lagos': 'Región de Los Lagos',
+  Aysén: 'Región de Aysén del General Carlos Ibáñez del Campo',
+};
+
 function normalizarClase(texto) {
   return texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
 }
@@ -16,21 +47,36 @@ function agruparPorCampo(lista, campo) {
 }
 
 function Estaciones() {
-  const regiones = useMemo(
-    () => Array.from(agruparPorCampo(estaciones, 'region').entries()).map(([region, estacionesDeRegion]) => ({
-      region,
-      zonas: Array.from(agruparPorCampo(estacionesDeRegion, 'zona').entries()).map(([zona, estacionesZona]) => ({
-        zona,
-        estaciones: estacionesZona,
+  const regiones = useMemo(() => {
+    const estacionesPorRegion = agruparPorCampo(
+      estaciones.map((estacion) => ({
+        ...estacion,
+        region: nombresRegiones[estacion.region] ?? estacion.region,
       })),
-    })),
-    [],
-  );
+      'region',
+    );
+
+    return regionesChile.map((region) => {
+      const estacionesDeRegion = estacionesPorRegion.get(region) ?? [];
+
+      return {
+        region,
+        zonas: Array.from(agruparPorCampo(estacionesDeRegion, 'zona').entries()).map(([zona, estacionesZona]) => ({
+          zona,
+          estaciones: estacionesZona,
+        })),
+      };
+    });
+  }, []);
 
   const [regionSeleccionada, setRegionSeleccionada] = useState(null);
   const [zonasAbiertas, setZonasAbiertas] = useState(() => new Set());
 
-  const seleccionarRegion = (region) => {
+  const seleccionarRegion = (region, tieneZonas) => {
+    if (!tieneZonas) {
+      return;
+    }
+
     setRegionSeleccionada((regionActual) => {
       const siguienteRegion = regionActual === region ? null : region;
       setZonasAbiertas(new Set());
@@ -67,21 +113,23 @@ function Estaciones() {
           {regiones.map(({ region, zonas }) => {
             const regionAbierta = regionSeleccionada === region;
             const regionId = `region-${normalizarClase(region)}`;
+            const tieneZonas = zonas.length > 0;
 
             return (
               <article className="source-region-group" key={region} role="listitem">
                 <button
                   className="region-card"
                   type="button"
-                  onClick={() => seleccionarRegion(region)}
+                  onClick={() => seleccionarRegion(region, tieneZonas)}
                   aria-expanded={regionAbierta}
-                  aria-controls={`${regionId}-zonas`}
+                  aria-controls={tieneZonas ? `${regionId}-zonas` : undefined}
+                  disabled={!tieneZonas}
                 >
                   <span>
                     <strong>{region}</strong>
                     <small>{zonas.length} zona{zonas.length === 1 ? '' : 's'} / cuenca{zonas.length === 1 ? '' : 's'}</small>
                   </span>
-                  <span className="accordion-icon" aria-hidden="true">{regionAbierta ? '−' : '+'}</span>
+                  {tieneZonas && <span className="accordion-icon" aria-hidden="true">{regionAbierta ? '−' : '+'}</span>}
                 </button>
 
                 {regionAbierta && (
