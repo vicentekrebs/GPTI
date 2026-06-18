@@ -14,6 +14,7 @@ h1, h2, h3, p { margin-top: 0; }
 .dashboard { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 34px 0 46px; }
 .page-stack { display: grid; gap: 26px; }
 .hero { display: grid; grid-template-columns: 1fr 280px; gap: 28px; align-items: stretch; }
+.simple-hero { grid-template-columns: 1fr; }
 .hero > div:first-child, .hero-card, .metric-card, .filters-panel, .chart-panel, .station-card, .comparison-panel, .value-panel, .page-heading { border: 1px solid rgba(111, 174, 215, 0.28); border-radius: 28px; background: rgba(255, 255, 255, 0.84); box-shadow: 0 22px 55px rgba(34, 84, 128, 0.12); backdrop-filter: blur(14px); }
 .hero > div:first-child, .value-panel, .page-heading { padding: 42px; }
 .eyebrow { display: inline-flex; margin-bottom: 14px; padding: 8px 14px; border-radius: 999px; color: #0477a8; background: #dcf4ff; font-size: 0.84rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
@@ -31,6 +32,12 @@ h2 { color: #123b62; }
 .metric-card strong { color: #11395e; font-size: 2.2rem; }
 .metric-card.updated strong { display: block; max-width: 14ch; font-size: 1.32rem; line-height: 1.2; }
 .value-panel h2 { max-width: 980px; margin-bottom: 12px; font-size: clamp(1.5rem, 3vw, 2.4rem); line-height: 1.15; letter-spacing: -0.04em; }
+.hydro-summary h2 { margin-bottom: 18px; }
+.insight-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.insight-grid article { border-radius: 22px; padding: 22px; background: #f1f8fd; }
+.insight-grid strong, .insight-grid span { display: block; }
+.insight-grid strong { margin-bottom: 8px; color: #0e3a61; font-size: 1.45rem; }
+.insight-grid span { color: #58718b; line-height: 1.5; font-weight: 750; }
 .filters-panel, .chart-header { display: flex; justify-content: space-between; gap: 24px; align-items: end; padding: 28px; }
 .filters-panel h2, .section-title h2 { margin-bottom: 8px; font-size: 1.55rem; }
 .filters, .chart-controls { display: flex; gap: 16px; flex-wrap: wrap; justify-content: flex-end; }
@@ -69,7 +76,7 @@ tbody tr:hover { background: #f7fcff; }
 .chart-wrapper { min-height: 380px; border: 1px solid #d9edf8; border-radius: 24px; padding: 18px 16px 8px; background: #fbfdff; }
 .comparison-chart { min-height: 560px; margin-bottom: 24px; }
 
-@media (max-width: 900px) { .hero, .metrics-grid, .stations-grid { grid-template-columns: 1fr; } .filters-panel, .chart-header, .navbar { align-items: stretch; flex-direction: column; } .filters, .chart-controls { justify-content: stretch; } .filters label, .chart-controls label, select { width: 100%; } .comparison-controls { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .hero, .metrics-grid, .stations-grid, .insight-grid { grid-template-columns: 1fr; } .filters-panel, .chart-header, .navbar { align-items: stretch; flex-direction: column; } .filters, .chart-controls { justify-content: stretch; } .filters label, .chart-controls label, select { width: 100%; } .comparison-controls { grid-template-columns: 1fr; } }
 @media (max-width: 620px) { .dashboard { width: min(100% - 24px, 1180px); padding: 24px 0; } .hero > div:first-child, .hero-card, .metric-card, .filters-panel, .station-card, .comparison-panel, .value-panel, .page-heading { border-radius: 22px; padding: 22px; } .chart-wrapper { padding: 12px 8px 4px; } }
 
 .day-selector { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 18px; padding: 0 0 4px; }
