@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { estaciones } from '../data/hydroData.js';
+import { useEffect, useMemo, useState } from 'react';
+import { obtenerEstacionesSimuladas } from '../data/hydroData.js';
 
 const regionesChile = [
   'Región de Arica y Parinacota',
@@ -47,6 +47,14 @@ function agruparPorCampo(lista, campo) {
 }
 
 function Estaciones() {
+  const [fechaActual, setFechaActual] = useState(() => new Date());
+  const estaciones = useMemo(() => obtenerEstacionesSimuladas(fechaActual), [fechaActual]);
+
+  useEffect(() => {
+    const temporizador = window.setInterval(() => setFechaActual(new Date()), 60000);
+    return () => window.clearInterval(temporizador);
+  }, []);
+
   const regiones = useMemo(() => {
     const estacionesPorRegion = agruparPorCampo(
       estaciones.map((estacion) => ({
@@ -67,7 +75,7 @@ function Estaciones() {
         })),
       };
     });
-  }, []);
+  }, [estaciones]);
 
   const [regionSeleccionada, setRegionSeleccionada] = useState(null);
   const [zonasAbiertas, setZonasAbiertas] = useState(() => new Set());
