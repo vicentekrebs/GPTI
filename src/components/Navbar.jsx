@@ -6,8 +6,7 @@ function Navbar() {
       <NavLink className="brand" to="/">HidrometeorologíaChile</NavLink>
       <nav aria-label="Navegación principal">
         <NavLink to="/">Inicio</NavLink>
-        <NavLink to="/estaciones">Estaciones</NavLink>
-        <NavLink to="/comparacion">Comparación</NavLink>
+        <NavLink to="/fuentes">Nuestras fuentes</NavLink>
       </nav>
     </header>
   );
