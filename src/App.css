@@ -64,8 +64,11 @@ select:focus { border-color: #18a8d8; box-shadow: 0 0 0 4px rgba(24,168,216,.14)
 .last-update { margin: 18px 0 0; color: #5f7790; font-size: .92rem; font-weight: 750; }
 .comparison-panel { padding: 28px; }
 .comparison-page { gap: 0; }
-.comparison-controls { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(180px, .8fr) minmax(360px, 1.5fr); gap: 16px; align-items: end; margin-bottom: 18px; }
-.comparison-controls label, .control-group { display: grid; gap: 8px; color: #516a83; font-size: .9rem; font-weight: 850; }
+.comparison-location-control { display: flex; margin-bottom: 18px; }
+.comparison-location-control label, .comparison-chart-control label, .control-group { display: grid; gap: 8px; color: #516a83; font-size: .9rem; font-weight: 850; }
+.comparison-location-control label { width: min(100%, 360px); }
+.comparison-chart-control { display: flex; justify-content: flex-end; margin: 0 0 12px; }
+.comparison-chart-control label { width: min(100%, 260px); }
 .control-group > span { display: block; }
 .table-wrapper { overflow-x: auto; margin-bottom: 24px; }
 table { width: 100%; border-collapse: collapse; min-width: 1040px; }
@@ -76,7 +79,7 @@ tbody tr:hover { background: #f7fcff; }
 .chart-wrapper { min-height: 380px; border: 1px solid #d9edf8; border-radius: 24px; padding: 18px 16px 8px; background: #fbfdff; }
 .comparison-chart { min-height: 560px; margin-bottom: 24px; }
 
-@media (max-width: 900px) { .hero, .metrics-grid, .stations-grid, .insight-grid { grid-template-columns: 1fr; } .filters-panel, .chart-header, .navbar { align-items: stretch; flex-direction: column; } .filters, .chart-controls { justify-content: stretch; } .filters label, .chart-controls label, select { width: 100%; } .comparison-controls { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .hero, .metrics-grid, .stations-grid, .insight-grid { grid-template-columns: 1fr; } .filters-panel, .chart-header, .navbar { align-items: stretch; flex-direction: column; } .filters, .chart-controls { justify-content: stretch; } .filters label, .chart-controls label, select { width: 100%; } .comparison-chart-control { justify-content: stretch; } .comparison-chart-control label { width: 100%; } }
 @media (max-width: 620px) { .dashboard { width: min(100% - 24px, 1180px); padding: 24px 0; } .hero > div:first-child, .hero-card, .metric-card, .filters-panel, .station-card, .comparison-panel, .value-panel, .page-heading { border-radius: 22px; padding: 22px; } .chart-wrapper { padding: 12px 8px 4px; } }
 
 .day-selector { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 18px; padding: 0 0 4px; }
@@ -88,12 +91,19 @@ tbody tr:hover { background: #f7fcff; }
 .day-selector button:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(34,84,128,.12); }
 .day-selector button.active { border-color: #18a8d8; color: #035d87; background: #dcf4ff; box-shadow: 0 12px 24px rgba(24,168,216,.18); }
 .day-selector button.active .day-selector-date { color: #0477a8; }
+.forecast-day-row { display: grid; grid-template-columns: repeat(7, minmax(142px, 1fr)); gap: 12px; margin: 0 0 18px; overflow-x: auto; padding: 2px 2px 12px; scroll-snap-type: x proximity; }
+.forecast-day-card { display: grid; min-width: 142px; gap: 7px; border: 1px solid #c9e3f3; border-radius: 22px; padding: 14px; color: #42647f; background: linear-gradient(180deg, #ffffff, #f4fbff); text-align: left; cursor: pointer; scroll-snap-align: start; box-shadow: 0 10px 24px rgba(34,84,128,.08); transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease; }
+.forecast-day-card:hover { transform: translateY(-2px); box-shadow: 0 16px 30px rgba(34,84,128,.14); }
+.forecast-day-card.active { border-color: #18a8d8; background: linear-gradient(180deg, #e2f6ff, #ffffff); box-shadow: 0 18px 36px rgba(24,168,216,.2); }
+.forecast-day-name { color: #0e3a61; font-size: 1rem; font-weight: 950; }
+.forecast-day-date { color: #6f8aa0; font-size: .82rem; font-weight: 850; text-transform: capitalize; }
+.forecast-day-metric { display: flex; align-items: center; gap: 6px; color: #31556f; font-size: .82rem; font-weight: 850; white-space: nowrap; }
 .comparison-insight { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; border: 1px solid #c9e3f3; border-radius: 22px; padding: 18px 20px; color: #31556f; background: linear-gradient(135deg, #f8fcff, #edf8ff); font-weight: 800; line-height: 1.55; }
 .comparison-insight-card { border: 1px solid rgba(111, 174, 215, 0.28); border-radius: 18px; padding: 14px 16px; background: rgba(255, 255, 255, 0.72); }
 .comparison-insight-card span { display: block; margin-bottom: 6px; color: #607990; font-size: .86rem; font-weight: 850; }
 .comparison-insight-card strong { color: #11395e; font-size: 1.35rem; }
 
-@media (max-width: 620px) { .day-selector button { flex: 1 1 42%; } .day-selector.compact button { flex: 1 1 22%; } .comparison-chart { min-height: 440px; } .comparison-insight { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .day-selector button { flex: 1 1 42%; } .day-selector.compact button { flex: 1 1 22%; } .forecast-day-row { display: flex; margin-right: -22px; padding-right: 22px; } .forecast-day-card { flex: 0 0 72%; } .comparison-chart { min-height: 440px; } .comparison-insight { grid-template-columns: 1fr; } }
 
 .update-date, .update-relative { display: block; }
 .update-date { color: #0e3a61; font-weight: 900; }

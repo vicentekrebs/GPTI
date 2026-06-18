@@ -3,7 +3,6 @@ import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, X
 import { configuracionVariables, estaciones, variablesDisponibles, zonasComparacion } from '../data/hydroData.js';
 
 const formateadorDiaSemana = new Intl.DateTimeFormat('es-CL', { weekday: 'long' });
-const formateadorDiaSemanaCorto = new Intl.DateTimeFormat('es-CL', { weekday: 'short' });
 const formateadorFecha = new Intl.DateTimeFormat('es-CL', { day: 'numeric', month: 'short' });
 const horasDia = Array.from({ length: 24 }, (_, indice) => `${String(indice).padStart(2, '0')}:00`);
 const coloresEstaciones = ['#0ea5e9', '#f97316', '#14b8a6', '#8b5cf6', '#ef4444'];
@@ -39,14 +38,13 @@ function crearDiaSelector(fecha, indice) {
   fechaDia.setDate(fecha.getDate() + indice);
 
   const nombre = capitalizar(formateadorDiaSemana.format(fechaDia));
-  const nombreCorto = capitalizar(limpiarPuntoFinal(formateadorDiaSemanaCorto.format(fechaDia)));
   const fechaCorta = capitalizar(limpiarPuntoFinal(formateadorFecha.format(fechaDia)));
 
   return {
     id: fechaDia.toISOString(),
     nombre,
     etiqueta: indice === 0 ? 'Hoy' : nombre,
-    fecha: `${nombreCorto} ${fechaCorta}`,
+    fecha: fechaCorta,
   };
 }
 
@@ -72,6 +70,10 @@ function construirNombreEstacion(estacion) {
 
 function formatearNumero(valor) {
   return Number(valor).toFixed(1);
+}
+
+function formatearMetrica(valor, unidad) {
+  return `${formatearNumero(valor)} ${unidad}`;
 }
 
 function normalizarClase(texto) {
@@ -102,6 +104,39 @@ function obtenerPromedioHistorico(estacion, key) {
   return Math.max(0.1, estacion[key] * (factoresHistoricos[key] ?? 1));
 }
 
+
+function obtenerPromedio(valores) {
+  if (!valores.length) return 0;
+
+  return valores.reduce((total, valor) => total + valor, 0) / valores.length;
+}
+
+function obtenerSerieAgregada(estacionesZona, key, dia) {
+  return horasDia.map((hora, indiceHora) => {
+    const valoresEstaciones = estacionesZona.map((estacion) => obtenerValorHorario(estacion, key, indiceHora, dia));
+
+    return {
+      hora,
+      valor: obtenerPromedio(valoresEstaciones),
+    };
+  });
+}
+
+function obtenerResumenDia(estacionesZona, dia) {
+  const temperatura = obtenerSerieAgregada(estacionesZona, 'temperatura', dia).map((registro) => registro.valor);
+  const precipitacion = obtenerSerieAgregada(estacionesZona, 'precipitacion', dia).map((registro) => registro.valor);
+  const caudal = obtenerSerieAgregada(estacionesZona, 'caudal', dia).map((registro) => registro.valor);
+  const nivelAgua = obtenerSerieAgregada(estacionesZona, 'nivelAgua', dia).map((registro) => registro.valor);
+
+  return {
+    temperaturaMaxima: Math.max(...temperatura),
+    temperaturaMinima: Math.min(...temperatura),
+    precipitacionTotal: precipitacion.reduce((total, valor) => total + valor, 0),
+    caudalPromedio: obtenerPromedio(caudal),
+    nivelPromedio: obtenerPromedio(nivelAgua),
+  };
+}
+
 function obtenerAnomalia(promedio, historico) {
   const diferencia = ((promedio - historico) / historico) * 100;
 
@@ -121,14 +156,14 @@ function Comparacion() {
   const [variable, setVariable] = useState('Temperatura');
   const [fechaActual, setFechaActual] = useState(() => new Date());
   const diasSelector = useMemo(() => obtenerDiasSelector(fechaActual), [fechaActual]);
-  const [dia, setDia] = useState(() => obtenerDiasSelector()[0].nombre);
+  const [diaSeleccionadoId, setDiaSeleccionadoId] = useState(() => obtenerDiasSelector()[0].id);
   const configuracion = configuracionVariables[variable];
 
   useEffect(() => {
     const temporizador = window.setTimeout(() => {
       const nuevaFecha = new Date();
       setFechaActual(nuevaFecha);
-      setDia(obtenerDiasSelector(nuevaFecha)[0].nombre);
+      setDiaSeleccionadoId(obtenerDiasSelector(nuevaFecha)[0].id);
     }, obtenerMilisegundosHastaManana());
 
     return () => window.clearTimeout(temporizador);
@@ -142,13 +177,22 @@ function Comparacion() {
       color: coloresEstaciones[index % coloresEstaciones.length],
     })), [zona]);
 
+  const diaSeleccionado = useMemo(() => (
+    diasSelector.find((item) => item.id === diaSeleccionadoId) ?? diasSelector[0]
+  ), [diaSeleccionadoId, diasSelector]);
+
+  const tarjetasDias = useMemo(() => diasSelector.map((item) => ({
+    ...item,
+    resumen: obtenerResumenDia(estacionesZona, item.nombre),
+  })), [diasSelector, estacionesZona]);
+
   const datosHorarios = useMemo(() => horasDia.map((hora, indiceHora) => {
     const registro = { hora };
     estacionesZona.forEach((estacion) => {
-      registro[estacion.nombreComparacion] = obtenerValorHorario(estacion, configuracion.key, indiceHora, dia);
+      registro[estacion.nombreComparacion] = obtenerValorHorario(estacion, configuracion.key, indiceHora, diaSeleccionado.nombre);
     });
     return registro;
-  }), [configuracion.key, dia, estacionesZona]);
+  }), [configuracion.key, diaSeleccionado.nombre, estacionesZona]);
 
   const resumenEstaciones = useMemo(() => estacionesZona.map((estacion) => {
     const valores = datosHorarios.map((registro) => registro[estacion.nombreComparacion]);
@@ -193,20 +237,25 @@ function Comparacion() {
   return (
     <div className="page-stack comparison-page">
       <section className="comparison-panel">
-        <div className="comparison-controls" aria-label="Controles de comparación">
-          <label>Zona<select value={zona} onChange={(event) => setZona(event.target.value)}>{zonasComparacion.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <div className="comparison-location-control" aria-label="Selector de lugar o zona">
+          <label>Lugar / zona<select value={zona} onChange={(event) => setZona(event.target.value)}>{zonasComparacion.map((item) => <option key={item}>{item}</option>)}</select></label>
+        </div>
+
+        <div className="forecast-day-row" aria-label="Pronóstico de los próximos 7 días">
+          {tarjetasDias.map((item) => (
+            <button key={item.id} type="button" className={`forecast-day-card${item.id === diaSeleccionado.id ? ' active' : ''}`} onClick={() => setDiaSeleccionadoId(item.id)}>
+              <span className="forecast-day-name">{item.etiqueta}</span>
+              <span className="forecast-day-date">{item.fecha}</span>
+              <span className="forecast-day-metric"><span aria-hidden="true">🌡️</span> Máx {formatearMetrica(item.resumen.temperaturaMaxima, '°C')}</span>
+              <span className="forecast-day-metric"><span aria-hidden="true">💧</span> Mín {formatearMetrica(item.resumen.temperaturaMinima, '°C')}</span>
+              <span className="forecast-day-metric"><span aria-hidden="true">🌧️</span> {formatearMetrica(item.resumen.precipitacionTotal, 'mm')}</span>
+              <span className="forecast-day-metric"><span aria-hidden="true">💦</span> {formatearMetrica(item.resumen.caudalPromedio, 'm³/s')}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="comparison-chart-control" aria-label="Selector de variable del gráfico">
           <label>Variable<select value={variable} onChange={(event) => setVariable(event.target.value)}>{variablesDisponibles.map((item) => <option key={item}>{item}</option>)}</select></label>
-          <div className="control-group">
-            <span>Día</span>
-            <div className="day-selector compact" aria-label="Seleccionar día de comparación">
-              {diasSelector.map((item) => (
-                <button key={item.id} type="button" className={item.nombre === dia ? 'active' : ''} onClick={() => setDia(item.nombre)}>
-                  <span className="day-selector-label">{item.etiqueta}</span>
-                  <span className="day-selector-date">{item.fecha}</span>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
         <div className="chart-wrapper comparison-chart">
@@ -215,7 +264,7 @@ function Comparacion() {
               <CartesianGrid strokeDasharray="4 4" stroke="#d9ecf7" />
               <XAxis dataKey="hora" tick={{ fill: '#55708a', fontSize: 12 }} axisLine={false} tickLine={false} interval={1} />
               <YAxis tick={{ fill: '#55708a', fontSize: 12 }} axisLine={false} tickLine={false} label={{ value: `${variable} (${configuracion.unidad})`, angle: -90, position: 'insideLeft', fill: '#55708a', fontSize: 12 }} />
-              <Tooltip formatter={(valor, nombre) => [`${valor} ${configuracion.unidad}`, nombre]} labelFormatter={(hora) => `${dia} · ${hora}`} contentStyle={{ border: '1px solid #c9e3f3', borderRadius: '16px', boxShadow: '0 16px 36px rgba(34, 84, 128, 0.16)' }} />
+              <Tooltip formatter={(valor, nombre) => [`${valor} ${configuracion.unidad}`, nombre]} labelFormatter={(hora) => `${diaSeleccionado.etiqueta} · ${hora}`} contentStyle={{ border: '1px solid #c9e3f3', borderRadius: '16px', boxShadow: '0 16px 36px rgba(34, 84, 128, 0.16)' }} />
               <Legend verticalAlign="top" height={48} />
               {estacionesZona.map((estacion) => (
                 <Line key={estacion.id} type="monotone" dataKey={estacion.nombreComparacion} name={estacion.nombreComparacion} stroke={estacion.color} strokeWidth={3} dot={false} activeDot={{ r: 7 }} />
