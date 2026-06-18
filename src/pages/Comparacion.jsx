@@ -1,17 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { configuracionVariables, estaciones, variablesDisponibles, zonasComparacion } from '../data/hydroData.js';
 
-const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-const diasSemanaCortos = {
-  Lunes: 'Lun',
-  Martes: 'Mar',
-  Miércoles: 'Mié',
-  Jueves: 'Jue',
-  Viernes: 'Vie',
-  Sábado: 'Sáb',
-  Domingo: 'Dom',
-};
+const formateadorDiaSemana = new Intl.DateTimeFormat('es-CL', { weekday: 'long' });
+const formateadorDiaSemanaCorto = new Intl.DateTimeFormat('es-CL', { weekday: 'short' });
+const formateadorFecha = new Intl.DateTimeFormat('es-CL', { day: 'numeric', month: 'short' });
 const horasDia = Array.from({ length: 24 }, (_, indice) => `${String(indice).padStart(2, '0')}:00`);
 const coloresEstaciones = ['#0ea5e9', '#f97316', '#14b8a6', '#8b5cf6', '#ef4444'];
 
@@ -31,6 +24,42 @@ const ajustePorDia = {
   Sábado: -0.1,
   Domingo: -0.5,
 };
+
+
+function capitalizar(texto) {
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+function limpiarPuntoFinal(texto) {
+  return texto.replace(/\.$/, '');
+}
+
+function crearDiaSelector(fecha, indice) {
+  const fechaDia = new Date(fecha);
+  fechaDia.setDate(fecha.getDate() + indice);
+
+  const nombre = capitalizar(formateadorDiaSemana.format(fechaDia));
+  const nombreCorto = capitalizar(limpiarPuntoFinal(formateadorDiaSemanaCorto.format(fechaDia)));
+  const fechaCorta = capitalizar(limpiarPuntoFinal(formateadorFecha.format(fechaDia)));
+
+  return {
+    id: fechaDia.toISOString(),
+    nombre,
+    etiqueta: indice === 0 ? 'Hoy' : nombre,
+    fecha: `${nombreCorto} ${fechaCorta}`,
+  };
+}
+
+function obtenerDiasSelector(fecha = new Date()) {
+  return Array.from({ length: 7 }, (_, indice) => crearDiaSelector(fecha, indice));
+}
+
+function obtenerMilisegundosHastaManana(fecha = new Date()) {
+  const manana = new Date(fecha);
+  manana.setHours(24, 0, 0, 0);
+
+  return manana.getTime() - fecha.getTime();
+}
 
 function construirNombreEstacion(estacion) {
   if (estacion.fuente === 'DGA') return `DGA ${estacion.nombre.replace('Estación ', '')}`;
@@ -90,8 +119,20 @@ function obtenerAnomalia(promedio, historico) {
 function Comparacion() {
   const [zona, setZona] = useState(zonasComparacion[0]);
   const [variable, setVariable] = useState('Temperatura');
-  const [dia, setDia] = useState('Miércoles');
+  const [fechaActual, setFechaActual] = useState(() => new Date());
+  const diasSelector = useMemo(() => obtenerDiasSelector(fechaActual), [fechaActual]);
+  const [dia, setDia] = useState(() => obtenerDiasSelector()[0].nombre);
   const configuracion = configuracionVariables[variable];
+
+  useEffect(() => {
+    const temporizador = window.setTimeout(() => {
+      const nuevaFecha = new Date();
+      setFechaActual(nuevaFecha);
+      setDia(obtenerDiasSelector(nuevaFecha)[0].nombre);
+    }, obtenerMilisegundosHastaManana());
+
+    return () => window.clearTimeout(temporizador);
+  }, [fechaActual]);
 
   const estacionesZona = useMemo(() => estaciones
     .filter((estacion) => estacion.zona === zona)
@@ -158,8 +199,11 @@ function Comparacion() {
           <div className="control-group">
             <span>Día</span>
             <div className="day-selector compact" aria-label="Seleccionar día de comparación">
-              {diasSemana.map((item) => (
-                <button key={item} type="button" className={item === dia ? 'active' : ''} onClick={() => setDia(item)}>{diasSemanaCortos[item]}</button>
+              {diasSelector.map((item) => (
+                <button key={item.id} type="button" className={item.nombre === dia ? 'active' : ''} onClick={() => setDia(item.nombre)}>
+                  <span className="day-selector-label">{item.etiqueta}</span>
+                  <span className="day-selector-date">{item.fecha}</span>
+                </button>
               ))}
             </div>
           </div>
