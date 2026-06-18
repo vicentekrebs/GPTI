@@ -7,7 +7,7 @@ export const configuracionVariables = {
   'Nivel de Agua': { key: 'nivelAgua', unidad: 'm', color: '#0891b2' },
 };
 
-export const estaciones = [
+const estacionesBase = [
   { id: 1, nombre: 'Maipo Central', zona: 'Cuenca del Maipo', region: 'Metropolitana', fuente: 'DGA', temperatura: 14.2, precipitacion: 4.8, caudal: 39.1, nivelAgua: 1.86, variablesMonitoreadas: ['Temperatura', 'Precipitación', 'Caudal', 'Nivel de Agua'], ultimaActualizacion: 'Hace 5 min', ultimaActualizacionExacta: '18/06/2026 09:25', estadoDatos: 'Actualizado' },
   { id: 2, nombre: 'Estación San Carlos', zona: 'Cuenca del Maipo', region: 'Metropolitana', fuente: 'Universidad de Chile', temperatura: 14.8, precipitacion: 5.1, caudal: 40.4, nivelAgua: 1.94, variablesMonitoreadas: ['Temperatura', 'Precipitación', 'Caudal', 'Nivel de Agua'], ultimaActualizacion: 'Hace 8 min', ultimaActualizacionExacta: '18/06/2026 09:22', estadoDatos: 'Actualizado' },
   { id: 3, nombre: 'Faena Norte', zona: 'Cuenca del Maipo', region: 'Metropolitana', fuente: 'Empresa privada minera', temperatura: 13.9, precipitacion: 4.3, caudal: 37.8, nivelAgua: 1.72, variablesMonitoreadas: ['Temperatura', 'Precipitación', 'Nivel de Agua'], ultimaActualizacion: 'Hace 3 min', ultimaActualizacionExacta: '18/06/2026 09:27', estadoDatos: 'Actualizado' },
@@ -40,6 +40,97 @@ export const estaciones = [
   { id: 30, nombre: 'San Pedro de Atacama', zona: 'Río Loa', region: 'Antofagasta', fuente: 'Red Agroclimática INIA', temperatura: 16.9, precipitacion: 0, caudal: 2.9, nivelAgua: 0.28, variablesMonitoreadas: ['Temperatura', 'Caudal', 'Nivel de Agua'], ultimaActualizacion: 'Hace 39 min', ultimaActualizacionExacta: '18/06/2026 08:51', estadoDatos: 'Actualizado' },
 ];
 
+
+const perfilesInviernoPorRegion = {
+  Antofagasta: { temperatura: 14, precipitacion: 0.05, caudal: 1.02, nivelAgua: 1.01 },
+  Atacama: { temperatura: 15, precipitacion: 0.12, caudal: 1.04, nivelAgua: 1.02 },
+  Coquimbo: { temperatura: 11.5, precipitacion: 1.8, caudal: 1.08, nivelAgua: 1.04 },
+  Valparaíso: { temperatura: 10.5, precipitacion: 5.8, caudal: 1.16, nivelAgua: 1.08 },
+  Metropolitana: { temperatura: 8.8, precipitacion: 6.8, caudal: 1.2, nivelAgua: 1.09 },
+  Biobío: { temperatura: 7.6, precipitacion: 17, caudal: 1.28, nivelAgua: 1.13 },
+  'La Araucanía': { temperatura: 6.8, precipitacion: 24, caudal: 1.32, nivelAgua: 1.16 },
+  'Los Lagos': { temperatura: 6.5, precipitacion: 29, caudal: 1.35, nivelAgua: 1.18 },
+  Aysén: { temperatura: 2.8, precipitacion: 34, caudal: 1.3, nivelAgua: 1.16 },
+};
+
+const offsetsActualizacionMinutos = {
+  1: 5, 2: 8, 3: 3, 4: 15, 5: 28, 6: 12, 7: 18, 8: 190, 9: 35, 10: 10,
+  11: 22, 12: null, 13: 16, 14: 11, 15: 41, 16: 310, 17: 7, 18: 19, 19: 52,
+  20: 9, 21: 33, 22: null, 23: 14, 24: 46, 25: 550, 26: 6, 27: 27, 28: 60, 29: 13, 30: 39,
+};
+
+function redondear(valor, decimales = 1) {
+  return Number(valor.toFixed(decimales));
+}
+
+function obtenerFactorEstacional(fecha = new Date()) {
+  const mes = fecha.getMonth();
+  if ([5, 6, 7].includes(mes)) return { temperatura: -1.2, precipitacion: 1.25, caudal: 1.12 };
+  if ([4, 8].includes(mes)) return { temperatura: 0, precipitacion: 1.05, caudal: 1.05 };
+  if ([11, 0, 1].includes(mes)) return { temperatura: 6.5, precipitacion: 0.45, caudal: 0.82 };
+  return { temperatura: 2.5, precipitacion: 0.8, caudal: 0.95 };
+}
+
+function variacionDeterministica(id, dia, amplitud) {
+  return (((id * 37 + dia * 17) % 100) / 100 - 0.5) * amplitud;
+}
+
+function calcularFechaActualizacion(offsetMinutos, ahora = new Date()) {
+  if (!Number.isFinite(offsetMinutos)) return null;
+  return new Date(ahora.getTime() - offsetMinutos * 60 * 1000);
+}
+
+function formatearFechaActualizacion(fecha) {
+  if (!(fecha instanceof Date) || Number.isNaN(fecha.getTime())) return 'Sin fecha disponible';
+  return new Intl.DateTimeFormat('es-CL', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).format(fecha).replace(',', '');
+}
+
+function formatearTiempoRelativo(fecha, ahora = new Date()) {
+  if (!(fecha instanceof Date) || Number.isNaN(fecha.getTime())) return 'Sin registro reciente';
+  const minutos = Math.max(0, Math.floor((ahora.getTime() - fecha.getTime()) / 60000));
+  if (minutos < 60) return `Hace ${minutos} min`;
+  const horas = Math.floor(minutos / 60);
+  return `Hace ${horas} h${horas > 1 ? 's' : ''}`;
+}
+
+function calcularEstadoDatos(fecha, ahora = new Date()) {
+  if (!(fecha instanceof Date) || Number.isNaN(fecha.getTime())) return 'Sin datos';
+  const horas = (ahora.getTime() - fecha.getTime()) / 36e5;
+  if (horas < 2) return 'Actualizado';
+  if (horas <= 8) return 'Desactualizado';
+  return 'Sin datos';
+}
+
+function aplicarSimulacionEstacional(estacion, ahora = new Date()) {
+  const perfil = perfilesInviernoPorRegion[estacion.region] ?? { temperatura: estacion.temperatura, precipitacion: estacion.precipitacion, caudal: 1, nivelAgua: 1 };
+  const estacional = obtenerFactorEstacional(ahora);
+  const diaAnual = Math.floor((ahora - new Date(ahora.getFullYear(), 0, 0)) / 86400000);
+  const esCordilleraOSur = /Cordillera|Embalse El Yeso|Baker|Llanquihue|Villarrica|Ralco/i.test(estacion.nombre) || ['Aysén', 'Los Lagos'].includes(estacion.region);
+  const lluviaVariable = Math.max(0, perfil.precipitacion * estacional.precipitacion + variacionDeterministica(estacion.id, diaAnual, perfil.precipitacion * 0.9));
+  const lluviaAcumuladaReciente = lluviaVariable + Math.max(0, lluviaVariable * 0.55 + variacionDeterministica(estacion.id + 7, diaAnual - 1, perfil.precipitacion * 0.5));
+  const respuestaHidrica = lluviaAcumuladaReciente * (['Antofagasta', 'Atacama'].includes(estacion.region) ? 0.01 : 0.035);
+  const fechaActualizacion = calcularFechaActualizacion(offsetsActualizacionMinutos[estacion.id], ahora);
+
+  return {
+    ...estacion,
+    temperatura: redondear(perfil.temperatura + estacional.temperatura + variacionDeterministica(estacion.id, diaAnual, esCordilleraOSur ? 4.5 : 3), 1),
+    precipitacion: redondear(lluviaVariable, 1),
+    caudal: estacion.variablesMonitoreadas.includes('Caudal') ? redondear(estacion.caudal * perfil.caudal * estacional.caudal + respuestaHidrica, 1) : 0,
+    nivelAgua: estacion.variablesMonitoreadas.includes('Nivel de Agua') ? redondear(estacion.nivelAgua * perfil.nivelAgua + respuestaHidrica * 0.018, 2) : 0,
+    ultimaActualizacion: formatearTiempoRelativo(fechaActualizacion, ahora),
+    ultimaActualizacionExacta: formatearFechaActualizacion(fechaActualizacion),
+    estadoDatos: calcularEstadoDatos(fechaActualizacion, ahora),
+  };
+}
+
+export function obtenerEstacionesSimuladas(fecha = new Date()) {
+  return estacionesBase.map((estacion) => aplicarSimulacionEstacional(estacion, fecha));
+}
+
+export const estaciones = obtenerEstacionesSimuladas();
+
 export const fuentesIntegradas = [
   { nombre: 'DGA', disponible: true },
   { nombre: 'Universidad de Chile', disponible: true },
@@ -53,9 +144,15 @@ export const fuentesIntegradas = [
 
 export const zonasComparacion = ['Cuenca del Maipo', 'Valle del Elqui', 'Lago Llanquihue', 'Valle del Aconcagua', 'Cuenca del Biobío', 'Río Cautín', 'Río Copiapó', 'Cuenca del Baker', 'Río Loa'];
 
+function formatearActualizacionGeneral(fecha = new Date()) {
+  return new Intl.DateTimeFormat('es-CL', {
+    day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).format(fecha).replace(',', ' ·');
+}
+
 export const metricasResumen = {
   totalEstaciones: estaciones.length,
   fuentesIntegradas: new Set(estaciones.map((estacion) => estacion.fuente)).size,
   variablesDisponibles: variablesDisponibles.length,
-  ultimaActualizacionGeneral: '18 junio 2026 · 09:30',
+  ultimaActualizacionGeneral: formatearActualizacionGeneral(),
 };

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { configuracionVariables, estaciones, variablesDisponibles, zonasComparacion } from '../data/hydroData.js';
+import { configuracionVariables, obtenerEstacionesSimuladas, variablesDisponibles, zonasComparacion } from '../data/hydroData.js';
 
 const formateadorDiaSemana = new Intl.DateTimeFormat('es-CL', { weekday: 'long' });
 const formateadorFecha = new Intl.DateTimeFormat('es-CL', { day: 'numeric', month: 'short' });
@@ -97,12 +97,17 @@ function obtenerValorHorario(estacion, key, indiceHora, dia) {
   const ajusteEstacion = ((estacion.id % 3) - 1) * 0.45;
   const ajusteDia = ajustePorDia[dia] ?? 0;
   const variacion = variacionesPorVariable[key][indiceHora];
+  const lluviaReciente = estacion.precipitacion * (0.55 + ((indiceHora + estacion.id) % 5) * 0.08);
+  const lluviaRezago = estacion.precipitacion * (indiceHora >= 6 ? 0.12 : 0.04);
   const escala = key === 'precipitacion' ? 0.45 : key === 'caudal' ? 1.15 : key === 'nivelAgua' ? 1 : 1;
   const ajusteLocal = key === 'nivelAgua' ? ajusteEstacion * 0.08 : ajusteEstacion;
   const ajusteDiario = key === 'nivelAgua' ? ajusteDia * 0.04 : ajusteDia;
-  const valor = base + (variacion * escala) + ajusteDiario + ajusteLocal;
+  const ajusteHidrico = key === 'caudal' ? lluviaRezago : key === 'nivelAgua' ? lluviaRezago * 0.006 : 0;
+  const variabilidadLluvia = key === 'precipitacion' ? lluviaReciente * 0.25 : 0;
+  const valor = base + (variacion * escala) + ajusteDiario + ajusteLocal + ajusteHidrico + variabilidadLluvia;
+  const decimales = key === 'nivelAgua' ? 2 : 1;
 
-  return Math.max(0, Number(valor.toFixed(1)));
+  return Math.max(0, Number(valor.toFixed(decimales)));
 }
 
 function obtenerPromedioHistorico(estacion, key) {
@@ -174,6 +179,8 @@ function obtenerAnomalia(promedio, historico) {
 }
 
 function Comparacion() {
+  const [fechaActual, setFechaActual] = useState(() => new Date());
+  const estaciones = useMemo(() => obtenerEstacionesSimuladas(fechaActual), [fechaActual]);
   const regionesDisponibles = useMemo(() => {
     const estacionesNormalizadas = estaciones.map((estacion) => ({
       ...estacion,
@@ -185,7 +192,7 @@ function Comparacion() {
       region,
       zonas: zonasComparacion.filter((zonaComparacion) => estacionesRegion.some((estacion) => estacion.zona === zonaComparacion)),
     }));
-  }, []);
+  }, [estaciones]);
 
   const [region, setRegion] = useState(regionesDisponibles[0]?.region ?? '');
   const zonasRegion = useMemo(() => (
@@ -193,7 +200,6 @@ function Comparacion() {
   ), [region, regionesDisponibles]);
   const [zona, setZona] = useState(zonasRegion[0] ?? zonasComparacion[0]);
   const [variable, setVariable] = useState('Temperatura');
-  const [fechaActual, setFechaActual] = useState(() => new Date());
   const diasSelector = useMemo(() => obtenerDiasSelector(fechaActual), [fechaActual]);
   const [diaSeleccionadoId, setDiaSeleccionadoId] = useState(() => obtenerDiasSelector()[0].id);
   const configuracion = configuracionVariables[variable];
@@ -213,13 +219,17 @@ function Comparacion() {
   };
 
   useEffect(() => {
+    const intervalo = window.setInterval(() => setFechaActual(new Date()), 60000);
     const temporizador = window.setTimeout(() => {
       const nuevaFecha = new Date();
       setFechaActual(nuevaFecha);
       setDiaSeleccionadoId(obtenerDiasSelector(nuevaFecha)[0].id);
     }, obtenerMilisegundosHastaManana());
 
-    return () => window.clearTimeout(temporizador);
+    return () => {
+      window.clearInterval(intervalo);
+      window.clearTimeout(temporizador);
+    };
   }, [fechaActual]);
 
   const estacionesZona = useMemo(() => estaciones
