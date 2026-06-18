@@ -85,11 +85,12 @@ tbody tr:hover { background: #f7fcff; }
 .day-selector.compact button { min-width: 44px; padding: 11px 12px; }
 .day-selector button:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(34,84,128,.12); }
 .day-selector button.active { border-color: #18a8d8; color: #035d87; background: #dcf4ff; box-shadow: 0 12px 24px rgba(24,168,216,.18); }
-.comparison-insight { border: 1px solid #c9e3f3; border-radius: 22px; padding: 18px 20px; color: #31556f; background: linear-gradient(135deg, #f8fcff, #edf8ff); font-weight: 800; line-height: 1.55; }
-.comparison-insight p { margin: 0; }
-.comparison-insight p + p { margin-top: 8px; }
+.comparison-insight { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; border: 1px solid #c9e3f3; border-radius: 22px; padding: 18px 20px; color: #31556f; background: linear-gradient(135deg, #f8fcff, #edf8ff); font-weight: 800; line-height: 1.55; }
+.comparison-insight-card { border: 1px solid rgba(111, 174, 215, 0.28); border-radius: 18px; padding: 14px 16px; background: rgba(255, 255, 255, 0.72); }
+.comparison-insight-card span { display: block; margin-bottom: 6px; color: #607990; font-size: .86rem; font-weight: 850; }
+.comparison-insight-card strong { color: #11395e; font-size: 1.35rem; }
 
-@media (max-width: 620px) { .day-selector button { flex: 1 1 42%; } .day-selector.compact button { flex: 1 1 22%; } .comparison-chart { min-height: 440px; } }
+@media (max-width: 620px) { .day-selector button { flex: 1 1 42%; } .day-selector.compact button { flex: 1 1 22%; } .comparison-chart { min-height: 440px; } .comparison-insight { grid-template-columns: 1fr; } }
 
 .update-date, .update-relative { display: block; }
 .update-date { color: #0e3a61; font-weight: 900; }
