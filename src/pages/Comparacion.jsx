@@ -7,6 +7,18 @@ const formateadorFecha = new Intl.DateTimeFormat('es-CL', { day: 'numeric', mont
 const horasDia = Array.from({ length: 24 }, (_, indice) => `${String(indice).padStart(2, '0')}:00`);
 const coloresEstaciones = ['#0ea5e9', '#f97316', '#14b8a6', '#8b5cf6', '#ef4444'];
 
+const nombresRegiones = {
+  Antofagasta: 'Región de Antofagasta',
+  Atacama: 'Región de Atacama',
+  Coquimbo: 'Región de Coquimbo',
+  Valparaíso: 'Región de Valparaíso',
+  Metropolitana: 'Región Metropolitana de Santiago',
+  Biobío: 'Región del Biobío',
+  'La Araucanía': 'Región de La Araucanía',
+  'Los Lagos': 'Región de Los Lagos',
+  Aysén: 'Región de Aysén del General Carlos Ibáñez del Campo',
+};
+
 const variacionesPorVariable = {
   temperatura: [-2.6, -2.9, -3.1, -3.2, -3.1, -2.8, -2.2, -1.4, -0.4, 0.7, 1.8, 2.7, 3.4, 3.8, 3.6, 3.1, 2.2, 1.1, 0.2, -0.5, -1.1, -1.6, -2, -2.3],
   precipitacion: [0.8, 0.7, 0.6, 0.5, 0.6, 0.8, 1, 1.2, 1.1, 0.9, 0.7, 0.5, 0.4, 0.4, 0.5, 0.6, 0.8, 1.1, 1.3, 1.2, 1.1, 1, 0.9, 0.8],
@@ -105,6 +117,16 @@ function obtenerPromedioHistorico(estacion, key) {
 }
 
 
+function agruparPorCampo(lista, campo) {
+  return lista.reduce((grupos, estacion) => {
+    const llave = estacion[campo];
+    const estacionesGrupo = grupos.get(llave) ?? [];
+    estacionesGrupo.push(estacion);
+    grupos.set(llave, estacionesGrupo);
+    return grupos;
+  }, new Map());
+}
+
 function obtenerPromedio(valores) {
   if (!valores.length) return 0;
 
@@ -152,12 +174,43 @@ function obtenerAnomalia(promedio, historico) {
 }
 
 function Comparacion() {
-  const [zona, setZona] = useState(zonasComparacion[0]);
+  const regionesDisponibles = useMemo(() => {
+    const estacionesNormalizadas = estaciones.map((estacion) => ({
+      ...estacion,
+      region: nombresRegiones[estacion.region] ?? estacion.region,
+    }));
+    const estacionesPorRegion = agruparPorCampo(estacionesNormalizadas, 'region');
+
+    return Array.from(estacionesPorRegion.entries()).map(([region, estacionesRegion]) => ({
+      region,
+      zonas: zonasComparacion.filter((zonaComparacion) => estacionesRegion.some((estacion) => estacion.zona === zonaComparacion)),
+    }));
+  }, []);
+
+  const [region, setRegion] = useState(regionesDisponibles[0]?.region ?? '');
+  const zonasRegion = useMemo(() => (
+    regionesDisponibles.find((item) => item.region === region)?.zonas ?? []
+  ), [region, regionesDisponibles]);
+  const [zona, setZona] = useState(zonasRegion[0] ?? zonasComparacion[0]);
   const [variable, setVariable] = useState('Temperatura');
   const [fechaActual, setFechaActual] = useState(() => new Date());
   const diasSelector = useMemo(() => obtenerDiasSelector(fechaActual), [fechaActual]);
   const [diaSeleccionadoId, setDiaSeleccionadoId] = useState(() => obtenerDiasSelector()[0].id);
   const configuracion = configuracionVariables[variable];
+
+  useEffect(() => {
+    if (!zonasRegion.length || zonasRegion.includes(zona)) {
+      return;
+    }
+
+    setZona(zonasRegion[0]);
+  }, [zona, zonasRegion]);
+
+  const seleccionarRegion = (regionSeleccionada) => {
+    const zonasNuevaRegion = regionesDisponibles.find((item) => item.region === regionSeleccionada)?.zonas ?? [];
+    setRegion(regionSeleccionada);
+    setZona(zonasNuevaRegion[0] ?? '');
+  };
 
   useEffect(() => {
     const temporizador = window.setTimeout(() => {
@@ -237,8 +290,9 @@ function Comparacion() {
   return (
     <div className="page-stack comparison-page">
       <section className="comparison-panel">
-        <div className="comparison-location-control" aria-label="Selector de lugar o zona">
-          <label>Lugar / zona<select value={zona} onChange={(event) => setZona(event.target.value)}>{zonasComparacion.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <div className="comparison-location-control" aria-label="Selector de región y zona">
+          <label>Región<select value={region} onChange={(event) => seleccionarRegion(event.target.value)}>{regionesDisponibles.map((item) => <option key={item.region} value={item.region}>{item.region}</option>)}</select></label>
+          <label>Zona / cuenca<select value={zona} onChange={(event) => setZona(event.target.value)} disabled={!zonasRegion.length}>{zonasRegion.map((item) => <option key={item}>{item}</option>)}</select></label>
         </div>
 
         <div className="forecast-day-row" aria-label="Pronóstico de los próximos 7 días">

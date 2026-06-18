@@ -64,9 +64,10 @@ select:focus { border-color: #18a8d8; box-shadow: 0 0 0 4px rgba(24,168,216,.14)
 .last-update { margin: 18px 0 0; color: #5f7790; font-size: .92rem; font-weight: 750; }
 .comparison-panel { padding: 28px; }
 .comparison-page { gap: 0; }
-.comparison-location-control { display: flex; margin-bottom: 18px; }
+.comparison-location-control { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
 .comparison-location-control label, .comparison-chart-control label, .control-group { display: grid; gap: 8px; color: #516a83; font-size: .9rem; font-weight: 850; }
 .comparison-location-control label { width: min(100%, 360px); }
+.comparison-location-control label:first-child { width: min(100%, 420px); }
 .comparison-chart-control { display: flex; justify-content: flex-end; margin: 0 0 12px; }
 .comparison-chart-control label { width: min(100%, 260px); }
 .control-group > span { display: block; }
@@ -79,7 +80,7 @@ tbody tr:hover { background: #f7fcff; }
 .chart-wrapper { min-height: 380px; border: 1px solid #d9edf8; border-radius: 24px; padding: 18px 16px 8px; background: #fbfdff; }
 .comparison-chart { min-height: 560px; margin-bottom: 24px; }
 
-@media (max-width: 900px) { .hero, .metrics-grid, .stations-grid, .insight-grid { grid-template-columns: 1fr; } .filters-panel, .chart-header, .navbar { align-items: stretch; flex-direction: column; } .filters, .chart-controls { justify-content: stretch; } .filters label, .chart-controls label, select { width: 100%; } .comparison-chart-control { justify-content: stretch; } .comparison-chart-control label { width: 100%; } }
+@media (max-width: 900px) { .hero, .metrics-grid, .stations-grid, .insight-grid { grid-template-columns: 1fr; } .filters-panel, .chart-header, .navbar { align-items: stretch; flex-direction: column; } .filters, .chart-controls { justify-content: stretch; } .filters label, .chart-controls label, select { width: 100%; } .comparison-location-control { flex-direction: column; } .comparison-location-control label, .comparison-location-control label:first-child, .comparison-chart-control label { width: 100%; } .comparison-chart-control { justify-content: stretch; } }
 @media (max-width: 620px) { .dashboard { width: min(100% - 24px, 1180px); padding: 24px 0; } .hero > div:first-child, .hero-card, .metric-card, .filters-panel, .station-card, .comparison-panel, .value-panel, .page-heading { border-radius: 22px; padding: 22px; } .chart-wrapper { padding: 12px 8px 4px; } }
 
 .day-selector { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 18px; padding: 0 0 4px; }
