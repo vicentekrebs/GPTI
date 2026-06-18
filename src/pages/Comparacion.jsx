@@ -19,6 +19,7 @@ const variacionesPorVariable = {
   temperatura: [-2.6, -2.9, -3.1, -3.2, -3.1, -2.8, -2.2, -1.4, -0.4, 0.7, 1.8, 2.7, 3.4, 3.8, 3.6, 3.1, 2.2, 1.1, 0.2, -0.5, -1.1, -1.6, -2, -2.3],
   precipitacion: [0.8, 0.7, 0.6, 0.5, 0.6, 0.8, 1, 1.2, 1.1, 0.9, 0.7, 0.5, 0.4, 0.4, 0.5, 0.6, 0.8, 1.1, 1.3, 1.2, 1.1, 1, 0.9, 0.8],
   caudal: [-1.2, -1.4, -1.5, -1.6, -1.5, -1.2, -0.8, -0.3, 0.2, 0.7, 1.2, 1.6, 1.9, 2.1, 2, 1.7, 1.3, 0.8, 0.4, 0, -0.3, -0.6, -0.8, -1],
+  nivelAgua: [-0.09, -0.1, -0.1, -0.11, -0.1, -0.08, -0.06, -0.04, -0.01, 0.02, 0.05, 0.08, 0.1, 0.11, 0.1, 0.08, 0.06, 0.04, 0.02, 0, -0.02, -0.04, -0.06, -0.08],
 };
 
 const ajustePorDia = {
@@ -44,15 +45,46 @@ function formatearNumero(valor) {
   return Number(valor).toFixed(1);
 }
 
+function normalizarClase(texto) {
+  return texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-');
+}
+
 function obtenerValorHorario(estacion, key, indiceHora, dia) {
   const base = estacion[key];
   const ajusteEstacion = ((estacion.id % 3) - 1) * 0.45;
   const ajusteDia = ajustePorDia[dia] ?? 0;
   const variacion = variacionesPorVariable[key][indiceHora];
-  const escala = key === 'precipitacion' ? 0.45 : key === 'caudal' ? 1.15 : 1;
-  const valor = base + (variacion * escala) + ajusteDia + ajusteEstacion;
+  const escala = key === 'precipitacion' ? 0.45 : key === 'caudal' ? 1.15 : key === 'nivelAgua' ? 1 : 1;
+  const ajusteLocal = key === 'nivelAgua' ? ajusteEstacion * 0.08 : ajusteEstacion;
+  const ajusteDiario = key === 'nivelAgua' ? ajusteDia * 0.04 : ajusteDia;
+  const valor = base + (variacion * escala) + ajusteDiario + ajusteLocal;
 
   return Math.max(0, Number(valor.toFixed(1)));
+}
+
+function obtenerPromedioHistorico(estacion, key) {
+  const factoresHistoricos = {
+    temperatura: 0.98,
+    precipitacion: 1.08,
+    caudal: 0.94,
+    nivelAgua: 0.96,
+  };
+
+  return Math.max(0.1, estacion[key] * (factoresHistoricos[key] ?? 1));
+}
+
+function obtenerAnomalia(promedio, historico) {
+  const diferencia = ((promedio - historico) / historico) * 100;
+
+  if (diferencia > 5) {
+    return { texto: `▲ Sobre lo normal (+${Math.round(diferencia)}%)`, tipo: 'sobre' };
+  }
+
+  if (diferencia < -5) {
+    return { texto: `▼ Bajo lo normal (${Math.round(diferencia)}%)`, tipo: 'bajo' };
+  }
+
+  return { texto: '● Normal', tipo: 'normal' };
 }
 
 function Comparacion() {
@@ -86,10 +118,12 @@ function Comparacion() {
       promedio,
       minimo: Math.min(...valores),
       maximo: Math.max(...valores),
+      anomalia: obtenerAnomalia(promedio, obtenerPromedioHistorico(estacion, configuracion.key)),
+      estadoDatos: estacion.estadoDatos,
       ultimaActualizacion: estacion.ultimaActualizacion,
       ultimaActualizacionExacta: estacion.ultimaActualizacionExacta,
     };
-  }), [datosHorarios, estacionesZona]);
+  }), [configuracion.key, datosHorarios, estacionesZona]);
 
   const insight = useMemo(() => {
     if (!resumenEstaciones.length) return [];
@@ -140,8 +174,8 @@ function Comparacion() {
 
         <div className="table-wrapper comparison-table">
           <table>
-            <thead><tr><th>Fuente</th><th>Estación</th><th>Promedio diario</th><th>Mínimo diario</th><th>Máximo diario</th><th>Última actualización</th></tr></thead>
-            <tbody>{resumenEstaciones.map((fila) => <tr key={`${fila.fuente}-${fila.estacion}`}><td>{fila.fuente}</td><td>{fila.estacion}</td><td>{formatearNumero(fila.promedio)} {configuracion.unidad}</td><td>{formatearNumero(fila.minimo)} {configuracion.unidad}</td><td>{formatearNumero(fila.maximo)} {configuracion.unidad}</td><td><span className="update-date">{fila.ultimaActualizacionExacta}</span><span className="update-relative">{fila.ultimaActualizacion}</span></td></tr>)}</tbody>
+            <thead><tr><th>Fuente</th><th>Estación</th><th>Promedio diario</th><th>Mínimo diario</th><th>Máximo diario</th><th>Anomalía</th><th>Estado del dato</th><th>Última actualización</th></tr></thead>
+            <tbody>{resumenEstaciones.map((fila) => <tr key={`${fila.fuente}-${fila.estacion}`}><td>{fila.fuente}</td><td>{fila.estacion}</td><td>{formatearNumero(fila.promedio)} {configuracion.unidad}</td><td>{formatearNumero(fila.minimo)} {configuracion.unidad}</td><td>{formatearNumero(fila.maximo)} {configuracion.unidad}</td><td><span className={`anomaly-badge ${fila.anomalia.tipo}`}>{fila.anomalia.texto}</span></td><td><span className={`data-status-badge ${normalizarClase(fila.estadoDatos)}`}>{fila.estadoDatos}</span></td><td><span className="update-date">{fila.ultimaActualizacionExacta}</span><span className="update-relative">{fila.ultimaActualizacion}</span></td></tr>)}</tbody>
           </table>
         </div>
 

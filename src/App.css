@@ -60,7 +60,7 @@ select:focus { border-color: #18a8d8; box-shadow: 0 0 0 4px rgba(24,168,216,.14)
 .comparison-controls label, .control-group { display: grid; gap: 8px; color: #516a83; font-size: .9rem; font-weight: 850; }
 .control-group > span { display: block; }
 .table-wrapper { overflow-x: auto; margin-bottom: 24px; }
-table { width: 100%; border-collapse: collapse; min-width: 760px; }
+table { width: 100%; border-collapse: collapse; min-width: 1040px; }
 th, td { padding: 16px 14px; border-bottom: 1px solid #e2f0f8; text-align: left; }
 th { color: #52708b; background: #edf8ff; font-size: .84rem; letter-spacing: .03em; text-transform: uppercase; }
 td { color: #21435f; font-weight: 650; }
@@ -104,3 +104,10 @@ tbody tr:hover { background: #f7fcff; }
 .update-date, .update-relative { display: block; }
 .update-date { color: #0e3a61; font-weight: 900; }
 .update-relative { margin-top: 4px; color: #6b8297; font-size: .88rem; }
+.anomaly-badge, .data-status-badge { display: inline-flex; align-items: center; width: fit-content; border-radius: 999px; padding: 7px 10px; font-size: .8rem; font-weight: 900; white-space: nowrap; }
+.anomaly-badge.sobre { color: #047857; background: #e4f8ee; }
+.anomaly-badge.normal { color: #64748b; background: #eef2f7; }
+.anomaly-badge.bajo { color: #c2410c; background: #ffedd5; }
+.data-status-badge.actualizado { color: #047857; background: #dff8ef; }
+.data-status-badge.desactualizado { color: #b45309; background: #fff1cc; }
+.data-status-badge.sin-datos { color: #64748b; background: #eef2f7; }
