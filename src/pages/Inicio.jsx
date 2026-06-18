@@ -1,39 +1,52 @@
-import { metricasResumen } from '../data/hydroData.js';
+import { estaciones, metricasResumen } from '../data/hydroData.js';
+
+const estacionesActualizadas = estaciones.filter((estacion) => estacion.estadoDatos === 'Actualizado').length;
+const zonasMonitoreadas = new Set(estaciones.map((estacion) => estacion.zona)).size;
+const fuentesConDatosRecientes = new Set(
+  estaciones
+    .filter((estacion) => estacion.estadoDatos === 'Actualizado')
+    .map((estacion) => estacion.fuente),
+).size;
+const estacionesConCaudal = estaciones.filter((estacion) => estacion.variablesMonitoreadas.includes('Caudal')).length;
 
 function Inicio() {
   return (
-    <div className="page-stack">
-      <section className="hero">
+    <div className="page-stack home-simple">
+      <section className="hero simple-hero">
         <div>
-          <span className="eyebrow">Plataforma de consulta integrada</span>
-          <h1>HidrometeorologíaChile</h1>
+          <span className="eyebrow">Monitoreo hidrometeorológico</span>
+          <h1>Información útil para decidir con datos de agua y clima.</h1>
           <p>
-            Centraliza datos hidrometeorológicos de distintas fuentes, como instituciones públicas,
-            universidades y empresas privadas, en una sola interfaz para consultar, filtrar y comparar
-            estaciones ubicadas en una misma zona geográfica.
+            Revisa condiciones actuales de temperatura, precipitación, caudal y nivel de agua en
+            estaciones de distintas zonas de Chile. La información permite detectar cambios recientes,
+            comparar fuentes y priorizar la revisión de sectores con datos incompletos o desactualizados.
           </p>
         </div>
-        <div className="hero-card">
-          <span>Valor principal</span>
-          <strong>1</strong>
-          <small>interfaz para revisar múltiples fuentes de datos</small>
+      </section>
+
+      <section className="metrics-grid" aria-label="Indicadores hidrometeorológicos principales">
+        <article className="metric-card stations"><span>Estaciones monitoreadas</span><strong>{metricasResumen.totalEstaciones}</strong></article>
+        <article className="metric-card sources"><span>Zonas con cobertura</span><strong>{zonasMonitoreadas}</strong></article>
+        <article className="metric-card variables"><span>Variables hidrometeorológicas</span><strong>{metricasResumen.variablesDisponibles}</strong></article>
+        <article className="metric-card updated"><span>Último corte de datos</span><strong>{metricasResumen.ultimaActualizacionGeneral}</strong></article>
+      </section>
+
+      <section className="value-panel hydro-summary" aria-label="Resumen operativo">
+        <h2>Resumen operativo</h2>
+        <div className="insight-grid">
+          <article>
+            <strong>{estacionesActualizadas} de {metricasResumen.totalEstaciones}</strong>
+            <span>estaciones tienen datos actualizados para lectura inmediata.</span>
+          </article>
+          <article>
+            <strong>{fuentesConDatosRecientes}</strong>
+            <span>fuentes reportan información reciente y comparable entre zonas.</span>
+          </article>
+          <article>
+            <strong>{estacionesConCaudal}</strong>
+            <span>estaciones incluyen caudal para apoyar seguimiento de disponibilidad hídrica.</span>
+          </article>
         </div>
-      </section>
-
-      <section className="metrics-grid" aria-label="Resumen general">
-        <article className="metric-card stations"><span>Total de estaciones disponibles</span><strong>{metricasResumen.totalEstaciones}</strong></article>
-        <article className="metric-card sources"><span>Fuentes integradas</span><strong>{metricasResumen.fuentesIntegradas}</strong></article>
-        <article className="metric-card variables"><span>Variables disponibles</span><strong>{metricasResumen.variablesDisponibles}</strong></article>
-        <article className="metric-card updated"><span>Última actualización general</span><strong>{metricasResumen.ultimaActualizacionGeneral}</strong></article>
-      </section>
-
-      <section className="value-panel">
-        <span className="eyebrow compact">Propuesta de valor</span>
-        <h2>Consulta, filtra y compara información hidrometeorológica de distintas fuentes sin tener que revisar múltiples plataformas por separado.</h2>
-        <p>
-          La app está organizada para que primero entiendas el alcance de la plataforma, luego consultes
-          estaciones disponibles y finalmente compares mediciones de varias instituciones para una misma zona.
-        </p>
       </section>
     </div>
   );
