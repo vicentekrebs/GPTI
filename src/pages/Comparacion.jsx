@@ -125,21 +125,29 @@ function Comparacion() {
     };
   }), [configuracion.key, datosHorarios, estacionesZona]);
 
-  const insight = useMemo(() => {
+  const metricasComparativas = useMemo(() => {
     if (!resumenEstaciones.length) return [];
 
-    const mayorPromedio = resumenEstaciones.reduce((mayor, estacion) => (estacion.promedio > mayor.promedio ? estacion : mayor), resumenEstaciones[0]);
-    const diferenciasHorarias = datosHorarios.map((registro) => {
-      const valores = estacionesZona.map((estacion) => registro[estacion.nombreComparacion]);
-      return Math.max(...valores) - Math.min(...valores);
-    });
-    const mayorDiferencia = Math.max(...diferenciasHorarias);
+    const promedios = resumenEstaciones.map((estacion) => estacion.promedio);
+    const minimos = resumenEstaciones.map((estacion) => estacion.minimo);
+    const maximos = resumenEstaciones.map((estacion) => estacion.maximo);
+    const promedioDiarioGlobal = promedios.reduce((total, valor) => total + valor, 0) / promedios.length;
+    const minimoDiarioGlobal = minimos.reduce((total, valor) => total + valor, 0) / minimos.length;
+    const maximoDiarioGlobal = maximos.reduce((total, valor) => total + valor, 0) / maximos.length;
+    const diferenciaMaxima = Math.max(...promedios) - Math.min(...promedios);
+    const varianza = promedios.reduce((total, valor) => total + ((valor - promedioDiarioGlobal) ** 2), 0) / promedios.length;
+    const desviacionEstandar = Math.sqrt(varianza);
+    const indiceVariabilidad = promedioDiarioGlobal > 0 ? (desviacionEstandar / promedioDiarioGlobal) * 100 : 0;
 
     return [
-      `Para el día seleccionado, ${mayorPromedio.estacion} registró el promedio diario más alto.`,
-      `La mayor diferencia observada entre estaciones fue de ${formatearNumero(mayorDiferencia)} ${configuracion.unidad}.`,
+      { etiqueta: 'Promedio diario global', valor: formatearNumero(promedioDiarioGlobal), unidad: configuracion.unidad },
+      { etiqueta: 'Mínimo diario global', valor: formatearNumero(minimoDiarioGlobal), unidad: configuracion.unidad },
+      { etiqueta: 'Máximo diario global', valor: formatearNumero(maximoDiarioGlobal), unidad: configuracion.unidad },
+      { etiqueta: 'Diferencia máxima entre estaciones', valor: formatearNumero(diferenciaMaxima), unidad: configuracion.unidad },
+      { etiqueta: 'Desviación estándar entre estaciones', valor: formatearNumero(desviacionEstandar), unidad: configuracion.unidad },
+      { etiqueta: 'Índice de variabilidad', valor: formatearNumero(indiceVariabilidad), unidad: '%' },
     ];
-  }, [configuracion.unidad, datosHorarios, estacionesZona, resumenEstaciones]);
+  }, [configuracion.unidad, resumenEstaciones]);
 
   return (
     <div className="page-stack comparison-page">
@@ -179,8 +187,13 @@ function Comparacion() {
           </table>
         </div>
 
-        <div className="comparison-insight" aria-label="Insight automático">
-          {insight.map((texto) => <p key={texto}>{texto}</p>)}
+        <div className="comparison-insight" aria-label="Métricas comparativas entre estaciones">
+          {metricasComparativas.map((metrica) => (
+            <article key={metrica.etiqueta} className="comparison-insight-card">
+              <span>{metrica.etiqueta}</span>
+              <strong>{metrica.valor} {metrica.unidad}</strong>
+            </article>
+          ))}
         </div>
       </section>
     </div>
